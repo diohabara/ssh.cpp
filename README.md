@@ -1,5 +1,7 @@
 # scc
 
+[![build-and-release](https://github.com/diohabara/ssh.cpp/actions/workflows/build-release.yml/badge.svg)](https://github.com/diohabara/ssh.cpp/actions/workflows/build-release.yml)
+
 C++ command line tool for managing SSH connections.
 
 ## Prerequisites
