@@ -41,7 +41,8 @@ jobs:
 
       - name: Setup Ninja (Windows)
         if: runner.os == 'Windows'
-        uses: ilammy/setup-ninja@v1
+        run: |
+          choco install ninja
 
       # Windows で MSVC を Ninja から使う
       - name: MSVC dev cmd (Windows)
