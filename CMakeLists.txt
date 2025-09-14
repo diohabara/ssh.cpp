@@ -8,6 +8,11 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+# Check if we're on Windows and exit with error if so
+if(WIN32)
+  message(FATAL_ERROR "This project does not support Windows. Please use Linux or macOS.")
+endif()
+
 # ftxui
 include(FetchContent)
 FetchContent_Declare(ftxui

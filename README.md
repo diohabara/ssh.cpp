@@ -5,6 +5,7 @@ C++ command line tool for managing SSH connections.
 ## Prerequisites
 
 - Docker
+- Linux or macOS (Windows is not supported)
 
 ## Build
 

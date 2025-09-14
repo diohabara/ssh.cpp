@@ -3,11 +3,11 @@ name: build-and-release
 on:
   push:
     branches: [ main ]
-    tags: [ 'v*' ]   # v1.2.3 のようなタグでリリース
+    tags: [ 'v*' ]   # e.g., v1.2.3
   pull_request:
 
 permissions:
-  contents: write  # release 作成に必要
+  contents: write
 
 jobs:
   build:
@@ -16,7 +16,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ubuntu-latest, macos-latest]
 
     env:
       BUILD_TYPE: Release
@@ -26,7 +26,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # Ninja / 必要ツールを用意
       - name: Setup dependencies (Linux)
         if: runner.os == 'Linux'
         run: |
@@ -39,17 +38,6 @@ jobs:
           brew update
           brew install ninja ccache
 
-      - name: Setup Ninja (Windows)
-        if: runner.os == 'Windows'
-        run: |
-          choco install ninja
-
-      # Windows で MSVC を Ninja から使う
-      - name: MSVC dev cmd (Windows)
-        if: runner.os == 'Windows'
-        uses: ilammy/msvc-dev-cmd@v1
-
-      # ccache（任意）
       - name: ccache
         uses: hendrikmuhs/ccache-action@v1
         with:
@@ -79,20 +67,13 @@ jobs:
           set -eux
           OUTDIR=dist
           mkdir -p "$OUTDIR"
-          # バイナリ名
           BIN_NAME="scc"
-          if [[ "${{ runner.os }}" == "Windows" ]]; then
-            BIN_PATH="build/${BIN_NAME}.exe"
-          else
-            BIN_PATH="build/${BIN_NAME}"
-          fi
-          # バージョン文字列
+          BIN_PATH="build/${BIN_NAME}"
           if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
             VERSION="${GITHUB_REF_NAME}"
           else
             VERSION="nightly-${GITHUB_SHA:0:7}"
           fi
-          # 成果物名
           PKG_BASE="${BIN_NAME}-${VERSION}-${{ runner.os }}-x86_64"
 
           mkdir -p "${OUTDIR}/${PKG_BASE}"
@@ -101,18 +82,14 @@ jobs:
           cp -n README.md "${OUTDIR}/${PKG_BASE}/" || true
 
           pushd "${OUTDIR}"
-          if [[ "${{ runner.os }}" == "Windows" ]]; then
-            7z a "${PKG_BASE}.zip" "${PKG_BASE}"
-          else
-            tar czf "${PKG_BASE}.tar.gz" "${PKG_BASE}"
-          fi
+          tar czf "${PKG_BASE}.tar.gz" "${PKG_BASE}"
           popd
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{ runner.os }}-artifact
-          path: dist/*
+          path: dist/*.tar.gz
 
   release:
     name: Publish GitHub Release
