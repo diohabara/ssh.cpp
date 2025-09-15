@@ -4,21 +4,21 @@
 #include <filesystem>
 #include <iostream>
 #include <optional>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
 namespace ssh_utils {
 inline std::string get_default_path_to_ssh_config() {
-  auto home = std::getenv("HOME");
-  if (home) {
+  if (const char *home = std::getenv("HOME")) {
     return (std::filesystem::path(home) / ".ssh" / "config").string();
-  } else {
-    throw std::runtime_error("HOME environment variable is not set.");
   }
+  throw std::runtime_error("HOME environment variable is not set.");
 }
 } // namespace ssh_utils
 
 namespace ssh {
+
 struct SshConnection {
   std::string host;
   std::optional<std::string> hostname;
@@ -28,14 +28,15 @@ struct SshConnection {
   SshConnection(std::string h, std::optional<std::string> hn = std::nullopt,
                 std::optional<std::string> u = std::nullopt)
       : host(std::move(h)), hostname(std::move(hn)), user(std::move(u)) {}
+
   friend bool operator==(const SshConnection &a, const SshConnection &b) {
     return a.host == b.host && a.hostname == b.hostname && a.user == b.user;
-  };
+  }
 
   friend std::ostream &operator<<(std::ostream &os, const SshConnection &conn) {
-    os << "Host: " << (conn.host.empty() ? "(none)" : conn.host);
-    os << ", Hostname: " << conn.hostname.value_or("(none)");
-    os << ", User: " << conn.user.value_or("(none)");
+    os << "Host: " << (conn.host.empty() ? "(none)" : conn.host)
+       << ", Hostname: " << conn.hostname.value_or("(none)")
+       << ", User: " << conn.user.value_or("(none)");
     return os;
   }
 };
@@ -47,27 +48,27 @@ private:
 
 public:
   explicit SshConnectionScanner(
-      std::string p = ssh_utils::get_default_path_to_ssh_config())
+      std::string &&p = ssh_utils::get_default_path_to_ssh_config())
       : path_to_ssh_config_(std::move(p)) {}
-  ~SshConnectionScanner() noexcept = default;
-  SshConnectionScanner(const SshConnectionScanner &other) = delete;
-  SshConnectionScanner &operator=(const SshConnectionScanner &other) = delete;
-  SshConnectionScanner(SshConnectionScanner &&other) = default;
-  SshConnectionScanner &operator=(SshConnectionScanner &&other) = delete;
+  ~SshConnectionScanner() = default;
+  SshConnectionScanner(const SshConnectionScanner &) = delete;
+  SshConnectionScanner &operator=(const SshConnectionScanner &) = delete;
+  SshConnectionScanner(SshConnectionScanner &&) noexcept = default;
+  SshConnectionScanner &operator=(SshConnectionScanner &&) noexcept = default;
 
-  auto set_path_to_ssh_config(std::string &&path) -> void;
-  auto get_path_to_ssh_config(void) const -> std::string;
-  auto get_ssh_config_content(void) const -> std::string;
-  auto parse_ssh_config_content(std::string &&content) const
-      -> std::vector<SshConnection>;
-  auto fetch_ssh_connections(void) const -> std::vector<SshConnection>;
+  void set_path_to_ssh_config(std::string &&p);
+  [[nodiscard]] std::string get_path_to_ssh_config() const;
+  [[nodiscard]] std::string get_ssh_config_content() const;
+  [[nodiscard]] std::vector<SshConnection>
+  parse_ssh_config_content(std::string &&content) const;
+  [[nodiscard]] std::vector<SshConnection> fetch_ssh_connections() const;
 };
 
-class SshConnectionNotFoundException : public std::exception {
+class SshConnectionNotFoundException : public std::runtime_error {
 public:
-  const char *what() const noexcept override {
-    return "No SSH connections found in the configuration file.";
-  }
+  explicit SshConnectionNotFoundException(
+      std::string msg = "No SSH connections found in the configuration file.")
+      : std::runtime_error(std::move(msg)) {}
 };
 
 } // namespace ssh
