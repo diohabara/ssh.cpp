@@ -17,7 +17,7 @@ struct State {
   std::vector<std::string> items;
   int selected = 0;
   bool quit = false;
-  bool do_exec = false;
+  
   bool no_print = false;
   std::optional<std::string> pending_cmd;
 };
